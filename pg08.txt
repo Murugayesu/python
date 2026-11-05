@@ -1,0 +1,194 @@
+EX.NO: 8 
+ 
+ 
+DATE: 
+Write a Python program to implement a Sequence-to-Sequence 
+Encoder–Decoder model using LSTM networks for English-to-
+Tamil Neural Machine Translation. 
+ 
+AIM 
+To develop an English-to-Tamil neural machine translation system using an Encoder–Decoder 
+architecture with LSTM networks. To train the model on paired English-Tamil sentences and generate 
+Tamil translations for given English input sentences. 
+ALGORITHM 
+1. 
+Import the required NumPy and TensorFlow/Keras libraries for building the LSTM-based 
+translation model. 
+2. 
+Read the English-Tamil sentence pairs from the text file and separate them using a tab delimiter. 
+3. 
+Remove empty entries and duplicate sentence pairs from the dataset. 
+4. 
+Add <start> and <end> tokens to each Tamil sentence for decoder sequence generation. 
+5. 
+Create separate tokenizers for English and Tamil and convert the sentences into numerical 
+sequences. 
+6. 
+Determine the maximum sentence length for both languages and apply post-padding to make 
+all sequences equal in length. 
+7. 
+Prepare the decoder input and decoder output sequences by shifting the Tamil sequence by one 
+position. 
+8. 
+Build the Encoder using an Embedding layer and an LSTM layer, and pass its hidden and cell 
+states to the Decoder. 
+9. 
+Build the Decoder using an Embedding layer, LSTM layer, and Softmax Dense layer, then 
+compile and train the Encoder–Decoder model using Adam optimizer and sparse categorical 
+cross-entropy loss for 100 epochs. 
+10. Create a translation function that predicts Tamil words sequentially until the <end> token is 
+generated, and test the model using sample English sentences. 
+SOFTWARE REQUIREMENTS 
+• 
+Programming Language: Python 
+• 
+Deep Learning Framework: TensorFlow / Keras 
+• 
+Libraries: NumPy, TensorFlow, Keras (Tokenizer, pad_sequences) 
+• 
+Dataset: English–Tamil parallel sentence pairs (tab-separated text file) 
+• 
+IDE/Platform: Jupyter Notebook, Google Colab, VS Code, or PyCharm 
+• 
+Required Packages: tensorflow, numpy 
+PROGRAM 
+import numpy as np 
+import tensorflow as tf 
+from keras.models import Model 
+from keras.layers import Input ,LSTM ,Embedding , Dense 
+from tensorflow.keras.preprocessing.text import Tokenizer 
+from keras.preprocessing.sequence import pad_sequences 
+file="D:\Projects\Learning\DL_and_ML_tryouts_supplements\eng_tamil_pairs.txt" 
+eng=[] 
+tam=[] 
+with open(file,"r",encoding="utf-8") as fil: 
+for line in fil: 
+line=line.strip() 
+if not line: 
+continue 
+parts=line.split("\t",1) 
+if len(parts) == 2: 
+eng_sent=parts[0].strip() 
+tam_sent=parts[1].strip() 
+eng.append(eng_sent) 
+tam.append(tam_sent) 
+print("Number of sentence pairs:",len(eng)) 
+unique=list(dict.fromkeys(zip(eng,tam))) 
+eng=[pair[0] for pair in unique] 
+tam=[pair[1] for pair in unique] 
+print("Unique sentences",len(eng)) 
+# Here it is to note very very important that the space after <start> and the space before <end> are very 
+very important.i have marked with | see that space. 
+tam = ["<start> " + sentence + " <end>"for sentence in tam] 
+eng_tokenizer = Tokenizer(filters='') 
+tam_tokenizer = Tokenizer(filters='') 
+eng_tokenizer.fit_on_texts(eng) 
+tam_tokenizer.fit_on_texts(tam) 
+eng_seq = eng_tokenizer.texts_to_sequences(eng) 
+tam_seq = tam_tokenizer.texts_to_sequences(tam) 
+max_eng = max(len(x) for x in eng_seq) 
+max_tam = max(len(x) for x in tam_seq) 
+print("Maximum English length:", max_eng) 
+print("Maximum Tamil length:", max_tam) 
+eng_seq = pad_sequences(eng_seq,maxlen=max_eng,padding="post") 
+tam_seq = pad_sequences(tam_seq,maxlen=max_tam,padding="post") 
+#Here +1 is added to reserve the index 
+eng_vocab = len(eng_tokenizer.word_index) + 1 
+tam_vocab = len(tam_tokenizer.word_index) + 1 
+print("Unique sentence pairs:", len(eng)) 
+print("Maximum English length:", max_eng) 
+print("Maximum Tamil length:", max_tam) 
+print("English vocabulary:", eng_vocab) 
+print("Tamil vocabulary:", tam_vocab) 
+#Building the LSTM 
+#tam_seq[:, :-1]: Slices the NumPy array to take all rows (:) and all columns except the last token (:-1). 
+#tam_seq[:, 1:]: Slices array to take all rows (:) and all columns shifted one step forward, dropping the 
+first <start> token (1:). 
+decoder_input = tam_seq[:, :-1] 
+decoder_output = tam_seq[:, 1:] 
+encoder_input = Input(shape=(max_eng,),name="leo_input") 
+encoder_embedding = Embedding(eng_vocab,64)(encoder_input) 
+encoder_lstm = LSTM(128,return_state=True) 
+_, h, c = encoder_lstm(encoder_embedding) 
+# here -1 in shape is due to the slicing operator 
+decoder_input_layer = Input(shape=(max_tam - 1,), name="das_input") 
+decoder_embedding = Embedding(tam_vocab,64)(decoder_input_layer) 
+decoder_lstm = LSTM(128,return_sequences=True) 
+decoder_output_layer = decoder_lstm(decoder_embedding,initial_state=[h, c]) 
+output = Dense(tam_vocab,activation="softmax")(decoder_output_layer) 
+#Model fitting 
+model = Model([encoder_input, decoder_input_layer], output) 
+model.compile(optimizer="adam",loss="sparse_categorical_crossentropy",metrics=["accuracy"]) 
+model.summary() 
+model.fit([eng_seq, decoder_input],np.expand_dims(decoder_output, -
+1),epochs=100,batch_size=32,verbose=1) 
+reverse_tamil = {value:key for key, value in tam_tokenizer.word_index.items()} 
+def translate(sentence): 
+sequence = eng_tokenizer.texts_to_sequences([sentence]) 
+sequence = pad_sequences(sequence,maxlen=max_eng,padding="post") 
+start = tam_tokenizer.word_index["<start>"] 
+end = tam_tokenizer.word_index["<end>"] 
+target = [start] 
+for i in range(max_tam - 1): 
+target_seq = pad_sequences([target],maxlen=max_tam - 1,padding="post") 
+prediction = model.predict([sequence, target_seq],verbose=0) 
+next_word = np.argmax(prediction[0, len(target) - 1, :]) 
+if next_word == end or next_word == 0: 
+break 
+target.append(next_word) 
+result = [] 
+for word_id in target[1:]: 
+if word_id in reverse_tamil: 
+word = reverse_tamil[word_id] 
+if word != "<start>" and word != "<end>": 
+result.append(word) 
+return " ".join(result) 
+test_sentences = ["Get down.","Goodbye and take care.","Let's meet again soon.","Good morning.","Thank 
+you.","How are you?"] 
+for sentence in test_sentences: 
+print("\nEnglish :", sentence) 
+print("Tamil   :", translate(sentence)) 
+test_sentences = ["hospital"] 
+for sentence in test_sentences: 
+print("\nEnglish :", sentence) 
+print("Tamil   :", translate(sentence)) 
+ 
+OUTPUT 
+Number of sentence pairs: 4611 
+Unique sentence pairs: 4198 
+Maximum English length: 16 
+Maximum Tamil length: 14 
+English vocabulary: 3271 
+Tamil vocabulary: 4563 
+ 
+ 
+Total trainable parameters: 1,287,635 
+ 
+Training (Adam optimizer, sparse categorical cross-entropy, 100 epochs): 
+Epoch 1/100 — accuracy: 0.6776, loss: 3.2445 
+Epoch 100/100 — accuracy: 0.9862, loss: 0.0833 
+ 
+Sample Translations: 
+English : Get down. 
+Tamil   : கீழே இறங்கு. 
+English : Goodbye and take care. 
+Tamil   : பிரியாவிடை, பார்த்துக்ககாள்ளுங்கள். 
+English : Let's meet again soon. 
+Tamil   : விடரவில் சந்திப்ழபாம். 
+English : Good morning. 
+Tamil   : காடல வணக்கம். 
+English : Thank you. 
+Tamil   : நன்றி. 
+English : How are you? 
+Tamil   : நீங்கள் எப்படி இருக்கிறீர்கள்? 
+English : hospital 
+Tamil   : மருத்துவமடன 
+ 
+ 
+ 
+ 
+ 
+RESULT 
+Thus, an LSTM-based English-to-Tamil neural machine translation model was successfully developed 
+and trained using paired sentence data. The trained model successfully generated Tamil translations 
+for the given English test sentences. 

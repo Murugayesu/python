@@ -1,0 +1,144 @@
+EX.NO: 5 
+DATE: 
+Write a Python program to implement a character-level or word-level 
+language model using Recurrent Neural Networks (RNN). Train it on a text 
+corpus (e.g., Shakespeare, news articles) and generate sample text. 
+ 
+AIM 
+To develop a character-level text generation model using a Simple Recurrent Neural 
+Network (SimpleRNN) with TensorFlow and generate Shakespeare-style text from a given 
+text corpus. 
+ 
+ 
+ALGORITHM 
+1. Import TensorFlow and NumPy libraries. 
+2. Load the Shakespeare text corpus from a text file and display its length and sample 
+content. 
+3. Create a character vocabulary by extracting all unique characters from the corpus 
+and sorting them. 
+4. Create mappings from characters to integer values and convert the complete text into 
+its integer representation. 
+5. Set the sequence length to 100 characters. 
+6. Create input and target sequences, where the target sequence is the input sequence 
+shifted by one character. 
+7. Create a TensorFlow dataset, shuffle it, and divide it into batches of 64. 
+8. Build the RNN model using: 
+○ Embedding layer with 128-dimensional embeddings 
+○ SimpleRNN layer with 256 units 
+○ Dense output layer with 65 units 
+9. Compile the model using the Adam optimizer and Sparse Categorical Crossentropy 
+loss with logits. 
+10. Train the model for 1 epoch using the prepared dataset. 
+11. Create an integer-to-character mapping for converting predictions back into 
+characters. 
+12. Define a text-generation function that takes a starting string, uses the last 100 
+characters as input, predicts the next character, and repeatedly appends the prediction 
+to the generated text. 
+13. Start text generation with "Shall " and generate 200 additional characters. 
+14. Display the generated text. 
+ 
+ 
+ 
+ 
+ 
+SOFTWARE REQUIREMENTS 
+● Programming Language: Python 
+● Deep Learning Framework: TensorFlow / Keras 
+● Libraries: NumPy, TensorFlow 
+● Dataset: Shakespeare text corpus 
+● IDE/Platform: Jupyter Notebook, Google Colab, VS Code, or PyCharm 
+● Required Packages: tensorflow, numpy 
+ 
+PROGRAM 
+import tensorflow as tf 
+import numpy as np 
+file_path = r"C:\Users\mones\OneDrive\Documents\dl\Exp_5\shakespeare.txt" 
+with open(file_path, "r", encoding="utf-8") as file: 
+text = file.read() 
+print("Corpus loaded successfully.") 
+print("Corpus length:", len(text)) 
+print(text) 
+print("\nFirst 10 characters:") 
+print(text[:10]) 
+vocab = sorted(set(text)) 
+vocab_size = len(vocab) 
+char_to_int = {char: i for i, char in enumerate(vocab)} 
+print(char_to_int) 
+print("Vocabulary size:", vocab_size) 
+text_as_int = np.array([char_to_int[char] for char in text]) 
+print("Sample text:", text[:5]) 
+print("Integer representation:", text_as_int[:5]) 
+sequence_length = 100 
+X = [] 
+Y = [] 
+for i in range(len(text_as_int) - sequence_length): 
+X.append(text_as_int[i:i + sequence_length]) 
+Y.append(text_as_int[i + 1:i + sequence_length + 1]) 
+X = np.array(X) 
+Y = np.array(Y) 
+print("Input shape:", X.shape) 
+print("Target shape:", Y.shape) 
+batch_size = 64 
+dataset = tf.data.Dataset.from_tensor_slices((X, Y)) 
+dataset = dataset.shuffle(10000).batch(batch_size, drop_remainder=True) 
+print("Dataset created successfully") 
+print("Batch size:", batch_size) 
+model = tf.keras.Sequential([ 
+tf.keras.layers.Embedding(input_dim=65, output_dim=128), 
+tf.keras.layers.SimpleRNN(256, return_sequences=True), 
+tf.keras.layers.Dense(65) 
+]) 
+model.summary() 
+loss_function = tf.keras.losses.SparseCategoricalCrossentropy(from_logits=True) 
+model.compile(optimizer="adam", loss=loss_function) 
+history = model.fit(dataset, epochs=10) 
+int_to_char = {i: char for i, char in enumerate(vocab)} 
+def generate_text(start_text, length=200): 
+result = start_text 
+ 
+ 
+for i in range(length): 
+x = [char_to_int[c] for c in result[-100:]] 
+x = np.array([x]) 
+prediction = model.predict(x, verbose=0) 
+next_id = np.argmax(prediction[0, -1]) 
+next_char = int_to_char[next_id] 
+result += next_char 
+return result 
+text = generate_text("Shall ", 200) 
+print("\nGenerated Text:") 
+print(text) 
+ 
+OUTPUT 
+Corpus loaded successfully. 
+Corpus length: 1115393 
+ 
+First 10 characters: 
+'First Citi' 
+ 
+ 
+Vocabulary size: 65 
+Sample text: First 
+Integer representation: [18 47 56 57 58] 
+ 
+ 
+Input shape: (1115293, 100) 
+Target shape: (1115293, 100) 
+Dataset created successfully 
+Batch size: 64 
+ 
+Output shape: (2, 5, 65) 
+ 
+ 
+Generated Text: 
+Shall the marriage, 
+The marriage.ALONSO: 
+The king on of the sea with the sea, sir, widow Dido's to thy son of all the surges and laugh 
+and strange more thee there we are and have you were prison. 
+ 
+ 
+GONZALO: 
+RESULT 
+Thus, a character-level language model was implemented using a Simple RNN and trained 
+on the Shakespeare text corpus. The trained model successfully generated new text 
+character-by-character from the starting sequence "Shall ". 

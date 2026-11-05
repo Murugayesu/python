@@ -1,0 +1,194 @@
+EX.NO: 3 
+DATE: 
+Implement a Convolutional Neural Network (CNN) to recognize handwritten 
+characters using a dataset such as EMNIST. Train, evaluate, and display 
+predictions on test data with confidence scores. 
+ 
+AIM 
+To build and train a CNN using TensorFlow and Keras for handwritten character 
+classificationon the EMNIST Balanced dataset, and evaluate its performance using accuracy, 
+loss curves and sample predictions. 
+ 
+ 
+ALGORITHM 
+1. Import the required libraries such as NumPy, Matplotlib, TensorFlow, Keras, gzip, 
+and idx2numpy. 
+2. Extract the compressed EMNIST Balanced dataset (.gz files) into usable IDX files. 
+3. Load the training and testing images and labels from the EMNIST dataset. 
+4. Normalize the image pixel values from 0–255 to 0–1 by dividing them by 255. 
+5. Reshape the images into 28 × 28 × 1 format to represent grayscale images with one 
+channel. 
+6. Identify the number of unique character classes, which is 47 in the EMNIST 
+Balanced dataset. 
+7. Create a Sequential CNN model with a Conv2D layer containing 32 filters and ReLU 
+activation. 
+8. Add MaxPooling2D, another Conv2D layer with 64 filters, and another 
+MaxPooling2D layer to extract important image features. 
+9. Flatten the extracted features and add a Dense layer with 128 neurons, followed by 
+a Dropout layer to reduce overfitting. 
+10. Add an output Dense layer with 47 neurons and Softmax activation, and compile the 
+model using the Adam optimizer and sparse categorical cross-entropy loss. 
+11. Train the CNN for 4 epochs with batch size 64, using 20% of the training data for 
+validation, and evaluate it using the test dataset. 
+12. Plot the accuracy and loss curves, then predict a sample character and display its 
+actual character, predicted character, and confidence percentage. 
+ 
+ 
+SOFTWARE REQUIREMENTS 
+ 
+Operating System: Windows / macOS / Linux 
+ 
+Programming Language: Python 3.x 
+ 
+IDE: Jupyter Notebook / Google Colab / VS Code 
+ 
+Deep Learning Framework: TensorFlow / Keras 
+ 
+Libraries: 
+o NumPy 
+o Matplotlib 
+o TensorFlow 
+o Keras 
+o gzip 
+o idx2numpy 
+ 
+Dataset: EMNIST Balanced Dataset 
+ 
+ 
+PROGRAM 
+import gzip 
+import idx2numpy 
+import numpy as np 
+import matplotlib.pyplot as plt 
+import tensorflow as tf 
+from tensorflow.keras.models import Sequential 
+from tensorflow.keras.layers import Conv2D, MaxPooling2D, Flatten, Dense, Dropout 
+# Extract .gz files 
+files = [ 
+"emnist-balanced-train-images-idx3-ubyte.gz", 
+"emnist-balanced-train-labels-idx1-ubyte.gz", 
+"emnist-balanced-test-images-idx3-ubyte.gz", 
+"emnist-balanced-test-labels-idx1-ubyte.gz" 
+] 
+for f in files: 
+with gzip.open(f, "rb") as src, open(f[:-3], "wb") as dst: 
+dst.write(src.read()) 
+ 
+# Load EMNIST dataset 
+x_train = idx2numpy.convert_from_file("emnist-balanced-train-images-idx3-ubyte") 
+y_train = idx2numpy.convert_from_file("emnist-balanced-train-labels-idx1-ubyte") 
+x_test = idx2numpy.convert_from_file("emnist-balanced-test-images-idx3-ubyte") 
+y_test = idx2numpy.convert_from_file("emnist-balanced-test-labels-idx1-ubyte") 
+print("Training Images :", x_train.shape) 
+print("Training Labels :", y_train.shape) 
+print("Testing Images :", x_test.shape) 
+print("Testing Labels :", y_test.shape) 
+# Normalize and reshape 
+x_train = x_train.astype("float32") / 255.0 
+x_test = x_test.astype("float32") / 255.0 
+x_train = x_train.reshape(-1, 28, 28, 1) 
+x_test = x_test.reshape(-1, 28, 28, 1) 
+print(x_train.shape) 
+print(x_test.shape) 
+print("Classes:", np.unique(y_train)) 
+print("Number of classes:", len(np.unique(y_train))) 
+# Build CNN 
+model = Sequential([ 
+Conv2D(32, (3, 3), activation="relu", input_shape=(28, 28, 1)), 
+MaxPooling2D((2, 2)), 
+Conv2D(64, (3, 3), activation="relu"), 
+MaxPooling2D((2, 2)), 
+Flatten(), 
+Dense(128, activation="relu"), 
+Dropout(0.5), 
+Dense(47, activation="softmax") 
+]) 
+# Compile 
+model.compile( 
+optimizer="adam", 
+loss="sparse_categorical_crossentropy", 
+metrics=["accuracy"] 
+) 
+model.summary() 
+# Train 
+history = model.fit( 
+x_train, 
+y_train, 
+epochs=4, 
+batch_size=64, 
+validation_split=0.2 
+) 
+# Evaluate 
+test_loss, test_accuracy = model.evaluate(x_test, y_test) 
+print("\nTest Loss :", test_loss) 
+print("Test Accuracy :", test_accuracy) 
+# Plot Accuracy and Loss 
+plt.figure(figsize=(12, 5)) 
+plt.subplot(1, 2, 1) 
+plt.plot(history.history["accuracy"], label="Training Accuracy") 
+plt.plot(history.history["val_accuracy"], label="Validation Accuracy") 
+plt.title("Accuracy Curve") 
+plt.xlabel("Epoch") 
+plt.ylabel("Accuracy") 
+plt.legend() 
+plt.subplot(1, 2, 2) 
+plt.plot(history.history["loss"], label="Training Loss") 
+plt.plot(history.history["val_loss"], label="Validation Loss") 
+plt.title("Loss Curve") 
+plt.xlabel("Epoch") 
+plt.ylabel("Loss") 
+plt.legend() 
+plt.tight_layout() 
+plt.show() 
+# Character mapping 
+mapping = {} 
+with open("emnist-balanced-mapping.txt") as f: 
+for line in f: 
+label, ascii_code = line.split() 
+mapping[int(label)] = chr(int(ascii_code)) 
+# Select image 
+index = 25 
+image = x_test[index] 
+label = y_test[index] 
+plt.imshow(image.reshape(28, 28), cmap="gray") 
+plt.axis("off") 
+plt.show() 
+# Predict 
+prediction = model.predict(np.expand_dims(image, axis=0)) 
+predicted_label = np.argmax(prediction) 
+print("Actual Character :", mapping[label]) 
+print("Predicted Character:", mapping[predicted_label]) 
+print("Confidence 
+:", round(np.max(prediction) * 100, 2), "%") 
+ 
+ 
+OUTPUT: 
+ 
+Actual Character : A 
+Predicted Character: A 
+Confidence 
+: 91.55 % 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+RESULT 
+Thus, a Convolutional Neural Network was successfully designed for handwritten character 
+recognition using the EMNIST Balanced dataset. The model was trained and evaluated, its 
+accuracy and loss were visualized, and test-character predictions were obtained along with 
+their confidence scores 

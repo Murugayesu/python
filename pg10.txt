@@ -1,0 +1,165 @@
+EX.NO: 10 
+DATE: 
+Build a recommendation system using deep learning from a sales 
+dataset (e.g., transactional data from an e-commerce platform). 
+Implement collaborative filtering or neural matrix factorization to 
+suggest products to users. 
+AIM 
+To develop a deep learning-based product recommendation system using neural collaborative filtering, in 
+which user and product embeddings are learned from e-commerce transaction data, and to use the trained 
+model to suggest the top-N products a customer has not yet purchased. 
+ALGORITHM 
+1. Import the required NumPy, Pandas, TensorFlow/Keras and Scikit-learn libraries. 
+2. Read the sales dataset from the CSV file and remove rows with missing customer ID, product ID, 
+product name, product category, quantity or order status. 
+3. Convert the quantity column to numeric, standardize the order status text, and keep only completed 
+orders with a quantity greater than zero. 
+4. Group the data by customer and product, summing the quantity, to create positive customer-product 
+interactions with label 1. 
+5. Map each customer ID and product ID to a unique integer index for use in the embedding layers. 
+6. Generate negative samples by randomly selecting up to four products that each customer has not 
+purchased and assigning them label 0. 
+7. Combine the positive and negative samples and split them into training and validation sets (80:20) 
+using stratified sampling. 
+8. Build the neural collaborative filtering model using separate Embedding layers for users and items, 
+concatenate the two embedding vectors, and pass them through Dense (ReLU), Dropout and 
+Sigmoid output layers. 
+9. Compile the model using the Adam optimizer, binary cross-entropy loss and AUC metric, and train 
+it for 30 epochs with a batch size of 64. 
+10. Create a recommendation function that predicts scores for all products not yet purchased by a 
+customer, ranks them in descending order, and displays the top-N products with their names, 
+categories and scores. 
+SOFTWARE REQUIREMENTS 
+• 
+Programming Language: Python 3.x 
+• 
+Deep Learning Framework: TensorFlow / Keras 
+• 
+Libraries: NumPy, Pandas, Scikit-learn, TensorFlow, Keras 
+• 
+Dataset: E-commerce sales transaction data (CSV file with customer_id, product_id, 
+product_name, product_category, quantity and order_status columns) 
+• 
+IDE/Platform: Jupyter Notebook, Google Colab, VS Code, or PyCharm 
+• 
+Required Packages: tensorflow, keras, numpy, pandas, scikit-learn 
+PROGRAM 
+import numpy as np 
+import pandas as pd 
+import tensorflow as tf 
+from keras import layers, Model 
+from sklearn.model_selection import train_test_split 
+# 1. Load and preprocess data 
+df = pd.read_csv(r"D:\Projects\Learning\DL_and_ML_tryouts_supplements\Experiment-10.csv") 
+df = df.dropna(subset=["customer_id", "product_id", "product_name", 
+"product_category", "quantity", "order_status"]) 
+df["quantity"] = pd.to_numeric(df["quantity"], errors="coerce") 
+df["order_status"] = df["order_status"].astype(str).str.strip().str.lower() 
+df = df[(df["order_status"] == "completed") & (df["quantity"] > 0)].copy() 
+# 2. Create customer-product interactions 
+interactions = df.groupby(["customer_id", "product_id"], as_index=False).agg( 
+quantity=("quantity", "sum")) 
+interactions["label"] = 1.0 
+customers = interactions["customer_id"].unique() 
+products = df.drop_duplicates("product_id").set_index("product_id") 
+user_map = {u: i for i, u in enumerate(customers)} 
+item_map = {p: i for i, p in enumerate(interactions["product_id"].unique())} 
+idx_to_item = {i: p for p, i in item_map.items()} 
+interactions["user_idx"] = interactions["customer_id"].map(user_map) 
+interactions["item_idx"] = interactions["product_id"].map(item_map) 
+num_users, num_items = len(user_map), len(item_map) 
+# 3. Generate negative samples 
+rng = np.random.default_rng(42) 
+purchased = interactions.groupby("user_idx")["item_idx"].apply(set).to_dict() 
+negative = [(u, i, 0.0) for u, items in purchased.items() 
+for i in rng.choice([i for i in range(num_items) if i not in items], 
+size=min(4, len([i for i in range(num_items) if i not in items])), 
+replace=False)] 
+data = pd.concat([ 
+interactions[["user_idx", "item_idx", "label"]], 
+pd.DataFrame(negative, columns=["user_idx", "item_idx", "label"]) 
+], ignore_index=True) 
+# 4. Split data 
+train, val = train_test_split(data, test_size=0.2, random_state=42, 
+stratify=data["label"]) 
+def make_inputs(d): 
+return {"user_input": d["user_idx"].to_numpy(dtype=np.int32), 
+"item_input": d["item_idx"].to_numpy(dtype=np.int32)} 
+X_train, y_train = make_inputs(train), train["label"].to_numpy(dtype=np.float32) 
+X_val, y_val = make_inputs(val), val["label"].to_numpy(dtype=np.float32) 
+# 5. Build recommendation model 
+user_input = layers.Input(shape=(1,), dtype="int32", name="user_input") 
+item_input = layers.Input(shape=(1,), dtype="int32", name="item_input") 
+u = layers.Flatten()(layers.Embedding(num_users, 32)(user_input)) 
+i = layers.Flatten()(layers.Embedding(num_items, 32)(item_input)) 
+x = layers.Concatenate()([u, i]) 
+x = layers.Dense(64, activation="relu")(x) 
+x = layers.Dropout(0.2)(x) 
+x = layers.Dense(32, activation="relu")(x) 
+output = layers.Dense(1, activation="sigmoid")(x) 
+model = Model([user_input, item_input], output) 
+model.compile(optimizer="adam", loss="binary_crossentropy", 
+metrics=[tf.keras.metrics.AUC(name="auc")]) 
+# 6. Train model 
+model.fit(X_train, y_train, validation_data=(X_val, y_val), 
+epochs=30, batch_size=64) 
+# 7. Recommend products 
+def recommend_products(customer_id, top_n=5): 
+u = user_map[customer_id] 
+candidates = [i for i in range(num_items) 
+if i not in purchased.get(u, set())] 
+if not candidates: 
+return pd.DataFrame() 
+scores = model.predict({ 
+"user_input": np.full(len(candidates), u, dtype=np.int32), 
+"item_input": np.array(candidates, dtype=np.int32) 
+}, verbose=0).flatten() 
+ranked = np.argsort(scores)[::-1][:top_n] 
+return pd.DataFrame([{ 
+"product_id": idx_to_item[candidates[j]], 
+"product_name": products.loc[idx_to_item[candidates[j]], "product_name"], 
+"product_category": products.loc[idx_to_item[candidates[j]], "product_category"], 
+"recommendation_score": round(float(scores[j]), 4) 
+} for j in ranked]) 
+# 8. Display recommendations 
+customer = customers[10] 
+print("Customer:", customer) 
+print(recommend_products(customer, 5).to_string(index=False)) 
+OUTPUT 
+Epoch 1/30 — auc: 0.4976, loss: 0.6683, val_auc: 0.4972, val_loss: 0.6677 
+Epoch 30/30 — auc: 0.9995, loss: 0.0221, val_auc: 0.5089, val_loss: 3.5972 
+Sample Recommendations: 
+Customer: CUST-000011 
+product_id 
+product_name 
+product_category 
+recommendation_score 
+PROD-0056 
+Tennis Racket 
+Sports & Outdoors 
+1.0000 
+PROD-0075 
+Breakfast Cereal 
+Grocery 
+1.0000 
+PROD-0071 
+Coffee Beans 
+Grocery 
+0.9999 
+PROD-0048 
+Reading Lamp 
+Books & Stationery 
+0.9998 
+PROD-0051 
+Yoga Mat 
+Sports & Outdoors 
+0.9987 
+ 
+ 
+ 
+ 
+ 
+RESULT 
+The neural network model was trained using customer and product embeddings to predict purchase 
+preferences. It generates recommendation scores for unpurchased products, ranks them in descending order, 
+and displays the top 5 recommended products with their IDs, names, categories, and scores. 

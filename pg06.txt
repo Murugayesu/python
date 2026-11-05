@@ -1,0 +1,106 @@
+EX.NO: 6 
+DATE: 
+Build and deploy a sentiment analysis model using LSTM on a dataset like 
+IMDb or Twitter sentiment dataset. Use a simple web interface (optional) 
+to input text and get sentiment output. 
+ 
+ 
+AIM 
+To develop and implement a sentiment analysis model using Long Short-Term Memory 
+(LSTM) with TensorFlow/Keras and classify IMDb movie reviews as Positive or Negative. 
+ 
+ 
+ALGORITHM 
+1. Import TensorFlow and NumPy libraries along with the required Keras modules. 
+2. Load the IMDb movie review dataset using the Keras dataset module. 
+3. Limit the vocabulary to the top 10,000 most frequently occurring words. 
+4. Split the dataset into training and testing datasets containing reviews and their 
+corresponding sentiment labels. 
+5. Pad all review sequences to a fixed length of 200 words using pad_sequences(). 
+6. Build a Sequential LSTM model using: 
+o Embedding layer with 10,000 vocabulary size and 128-dimensional 
+embeddings. 
+o LSTM layer with 64 units. 
+o Dense layer with 1 neuron and sigmoid activation. 
+7. Compile the model using the Adam optimizer, Binary Cross-Entropy loss, and 
+accuracy as the evaluation metric. 
+8. Train the model using the training dataset for 3 epochs with a batch size of 64. 
+9. Evaluate the trained model using the IMDb test dataset and calculate the test 
+accuracy. 
+10. Load the IMDb word-to-index dictionary for converting a custom sentence into 
+numerical word sequences. 
+11. Encode the custom sentence "This movie was super", pad it to 200 words, and 
+provide it as input to the trained LSTM model. 
+12. Generate the prediction score using the trained model and classify the sentiment as 
+Positive if the score is ≥ 0.5, otherwise classify it as Negative. 
+13. Display the input sentence, predicted sentiment, and prediction score. 
+SOFTWARE REQUIREMENTS 
+ 
+Programming Language: Python 
+ 
+Deep Learning Framework: TensorFlow / Keras 
+ 
+Libraries: NumPy, TensorFlow 
+ 
+Dataset: IMDb Movie Review Dataset 
+ 
+IDE/Platform: Jupyter Notebook, Google Colab, VS Code, or PyCharm 
+ 
+Required Packages: tensorflow, numpy 
+ 
+ 
+PRROGRAM 
+import tensorflow as tf 
+from tensorflow.keras.datasets import imdb 
+from tensorflow.keras.preprocessing.sequence import pad_sequences 
+import numpy as np 
+print("TensorFlow version:", tf. version ) 
+print("NumPy version:", np. version ) 
+# Load and preprocess data 
+(x_train, y_train), (x_test, y_test) = imdb.load_data(num_words=10000) 
+x_train = pad_sequences(x_train, maxlen=200) 
+x_test = pad_sequences(x_test, maxlen=200) 
+# Build LSTM model 
+model = tf.keras.Sequential([ 
+tf.keras.layers.Embedding(10000, 128), 
+tf.keras.layers.LSTM(64), 
+tf.keras.layers.Dense(1, activation="sigmoid") 
+]) 
+# Train model 
+model.compile( 
+optimizer="adam", 
+loss="binary_crossentropy", 
+metrics=["accuracy"] 
+) 
+model.fit(x_train, y_train, epochs=3, batch_size=64) 
+# Test model accuracy 
+loss, accuracy = model.evaluate(x_test, y_test) 
+print("Test Accuracy:", accuracy) 
+# Test a custom sentence 
+word_index = imdb.get_word_index() 
+sentence = "This movie was super" 
+encoded = [ 
+word_index.get(word.lower(), 2) + 3 
+for word in sentence.split() 
+] 
+encoded = pad_sequences([encoded], maxlen=200) 
+prediction = model.predict(encoded)[0][0] 
+print("\nSentence:", sentence) 
+print("Sentiment:", "Positive" if prediction >= 0.5 else "Negative") 
+print("Prediction Score:", prediction) 
+ 
+ 
+ 
+ 
+OUTPUT 
+ 
+ 
+ 
+Sentence: This movie was super 
+Sentiment: Positive 
+Prediction Score: 0.6813436 
+RESULT 
+The LSTM-based sentiment analysis model was successfully implemented using the IMDb 
+movie review dataset. The model was trained and evaluated successfully, and it classified 
+the given custom sentence as Positive or Negative based on the prediction score 
+  

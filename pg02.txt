@@ -1,0 +1,126 @@
+EX.NO: 2 
+DATE: 
+Write a Python program using TensorFlow/Keras or PyTorch to create and 
+train a simple feedforward neural network on the MNIST dataset. Evaluate 
+its performance and visualize the loss and accuracy curves. 
+ 
+AIM 
+To build and train an Artificial Neural Network (ANN) using TensorFlow and Keras for 
+handwritten digit classification on the MNIST dataset. To evaluate the model's performance 
+using accuracy, loss, and training-validation curves. 
+ 
+ 
+ALGORITHM 
+1. Import the required TensorFlow, Keras, and Matplotlib libraries. 
+2. Load the MNIST handwritten digit dataset containing training and testing images. 
+3. Separate the dataset into training data (x_train, y_train) and testing data (x_test, 
+y_test). 
+4. Normalize the image pixel values by dividing them by 255.0, converting the range 
+from 0–255 to 0–1. 
+5. Create a Sequential Artificial Neural Network (ANN) model. 
+6. Add a Flatten layer to convert each 28 × 28 image into a one-dimensional vector of 
+784 features. 
+7. Add a Dense hidden layer with 64 neurons using the ReLU activation function. 
+8. Add an output Dense layer with 10 neurons using the Softmax activation function 
+for classifying digits 0–9. 
+9. Compile the ANN model using the Adam optimizer, Sparse Categorical Cross-
+Entropy loss, and accuracy metric. 
+10. Train the model for 10 epochs with a batch size of 32, using 20% of the training data 
+for validation. 
+11. Evaluate the trained model using the test dataset and obtain the test loss and test 
+accuracy. 
+12. Plot the training/validation loss and accuracy curves and analyze the performance of 
+the ANN model. 
+ 
+ 
+SOFTWARE REQUIREMENTS 
+ 
+Operating System: Windows / macOS / Linux 
+ 
+Programming Language: Python 3.x 
+ 
+IDE: Jupyter Notebook / Google Colab / VS Code 
+ 
+Framework: TensorFlow / Keras 
+ 
+Libraries: 
+o NumPy 
+o Matplotlib 
+o TensorFlow 
+o Keras 
+Dataset: MNIST Handwritten Digit Dataset 
+ 
+ 
+PROGRAM 
+import tensorflow as tf 
+from tensorflow.keras.models import Sequential 
+from tensorflow.keras.layers import Dense, Flatten, Dropout 
+import matplotlib.pyplot as plt 
+(x_train, y_train), (x_test, y_test) = tf.keras.datasets.mnist.load_data() 
+x_train = x_train / 255.0 
+x_test = x_test / 255.0 
+model = Sequential([ 
+Flatten(input_shape=(28, 28)),  # Convert 28x28 image into 784 features 
+Dense(64, activation='relu'), 
+# Hidden layer 
+#Dense(64, activation='relu'), 
+Dense(10, activation='softmax') 
+# Output layer (10 classes) 
+]) 
+model.summary() 
+model.compile(optimizer='adam',loss='sparse_categorical_crossentropy',metrics=['accurac 
+y']) 
+history = model.fit( 
+x_train, 
+y_train, 
+epochs=10, 
+batch_size=32, 
+validation_split=0.2, 
+verbose=1 
+) 
+ 
+ 
+test_loss, test_accuracy = model.evaluate(x_test, y_test, verbose=0) 
+print(f"\nTest Loss: {test_loss:.4f}") 
+print(f"Test Accuracy: {test_accuracy:.4f}") 
+# Plot Loss Curve 
+plt.figure(figsize=(12, 5)) 
+plt.subplot(1, 2, 1) 
+plt.plot(history.history['loss'], label='Training Loss') 
+plt.plot(history.history['val_loss'], label='Validation Loss') 
+plt.title("Loss Curve") 
+plt.xlabel("Epoch") 
+plt.ylabel("Loss") 
+plt.legend() 
+# Plot Accuracy Curve 
+plt.subplot(1, 2, 2) 
+plt.plot(history.history['accuracy'], label='Training Accuracy') 
+plt.plot(history.history['val_accuracy'], label='Validation Accuracy') 
+plt.title("Accuracy Curve") 
+plt.xlabel("Epoch") 
+plt.ylabel("Accuracy") 
+plt.legend() 
+plt.tight_layout() 
+plt.show() 
+ 
+OUTPUT 
+ 
+ 
+Test Loss: 0.0919 
+Test Accuracy: 0.9760 
+Sample index: 0 
+Predicted Output: 7 
+Actual Output: 7 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+RESULT: 
+The ANN model was successfully trained on the MNIST dataset and achieved high accuracy 
+in handwritten digit classification. The loss and accuracy curves indicated effective learning 
+and good model performance 
